@@ -3,6 +3,7 @@ import { Sidebar, TabType } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { OverviewView } from './components/views/OverviewView';
 import { CarsView } from './components/views/CarsView';
+import { BrandsView } from './components/views/BrandsView';
 import { UsersView } from './components/views/UsersView';
 import { ReviewsView } from './components/views/ReviewsView';
 import { AdsView } from './components/views/AdsView';
@@ -17,6 +18,8 @@ export default function App() {
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [adsCount, setAdsCount] = useState<number>(4);
+  const [brandsCount, setBrandsCount] = useState<number>(23);
+  const [selectedBrandForFleet, setSelectedBrandForFleet] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -45,6 +48,12 @@ export default function App() {
       if (adsRes.ok) {
         const adsData = await adsRes.json();
         setAdsCount(adsData?.length ?? 4);
+      }
+
+      const brandsRes = await fetch('/api/brands');
+      if (brandsRes.ok) {
+        const brandsData = await brandsRes.json();
+        setBrandsCount(brandsData?.length ?? 23);
       }
     } catch (err) {
       if (!isRetry) {
@@ -81,6 +90,7 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         carsCount={overviewData?.cars?.total_cars ?? 27}
+        brandsCount={brandsCount}
         usersCount={overviewData?.users?.total_users ?? 1}
         reviewsCount={overviewData?.reviews?.total_reviews ?? 4}
         adsCount={adsCount}
@@ -112,7 +122,20 @@ export default function App() {
           )}
 
           {currentTab === 'fleet' && (
-            <CarsView onAddVehicle={() => setIsGlobalAddVehicleOpen(true)} />
+            <CarsView
+              onAddVehicle={() => setIsGlobalAddVehicleOpen(true)}
+              initialBrandFilter={selectedBrandForFleet}
+            />
+          )}
+
+          {currentTab === 'brands' && (
+            <BrandsView
+              onNavigateToFleet={(brand) => {
+                setSelectedBrandForFleet(brand);
+                setCurrentTab('fleet');
+              }}
+              onBrandCountChange={(count) => setBrandsCount(count)}
+            />
           )}
 
           {currentTab === 'users' && <UsersView />}

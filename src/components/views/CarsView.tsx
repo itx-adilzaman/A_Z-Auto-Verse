@@ -27,9 +27,10 @@ import { VehicleFormModal } from '../modals/VehicleFormModal';
 
 interface CarsViewProps {
   onAddVehicle: () => void;
+  initialBrandFilter?: string;
 }
 
-export const CarsView: React.FC<CarsViewProps> = () => {
+export const CarsView: React.FC<CarsViewProps> = ({ onAddVehicle, initialBrandFilter }) => {
   const [cars, setCars] = useState<Car[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,13 @@ export const CarsView: React.FC<CarsViewProps> = () => {
 
   // Filters & Search
   const [search, setSearch] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState(initialBrandFilter || 'all');
+
+  useEffect(() => {
+    if (initialBrandFilter) {
+      setSelectedBrand(initialBrandFilter);
+    }
+  }, [initialBrandFilter]);
   const [selectedBodyType, setSelectedBodyType] = useState('all');
   const [selectedFuelType, setSelectedFuelType] = useState('all');
   const [filterFeatured, setFilterFeatured] = useState(false);

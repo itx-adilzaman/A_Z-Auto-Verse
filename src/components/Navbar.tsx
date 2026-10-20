@@ -25,6 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'AutoVerse / Executive Overview';
       case 'fleet':
         return 'AutoVerse / Vehicle Fleet Management';
+      case 'brands':
+        return 'AutoVerse / Automotive Brands & Marques';
       case 'users':
         return 'AutoVerse / User & Role Directory';
       case 'reviews':

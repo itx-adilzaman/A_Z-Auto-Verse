@@ -116,6 +116,19 @@ export interface Ad {
   accent_color_hex: string | number;
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  logo_url: string;
+  country: string;
+  founded_year: number;
+  headquarters: string;
+  description: string;
+  total_models: number;
+  active_cars_count?: number;
+  avg_inventory_price?: number;
+}
+
 export interface OverviewData {
   cars: {
     total_cars: number;

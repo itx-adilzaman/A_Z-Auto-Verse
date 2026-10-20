@@ -197,10 +197,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </p>
             </div>
             <button
-              onClick={() => onNavigate('fleet')}
+              onClick={() => onNavigate('brands')}
               className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1"
             >
-              <span>View All</span>
+              <span>Manage Brands</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>

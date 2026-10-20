@@ -1171,6 +1171,212 @@ app.post('/api/ads/:id/duplicate', async (req: Request, res: Response) => {
   }
 });
 
+// 12.8 Automotive Brands Management
+app.get('/api/brands', async (req: Request, res: Response) => {
+  try {
+    const { search, country, sort_by = 'name', sort_order = 'asc' } = req.query;
+    let sql = `
+      SELECT 
+        b.*,
+        COUNT(c.id)::int as active_cars_count,
+        COALESCE(AVG(c.price_usd), 0)::numeric as avg_inventory_price
+      FROM neon_brands b
+      LEFT JOIN neon_cars c ON LOWER(b.name) = LOWER(c.brand)
+    `;
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (search) {
+      conditions.push(
+        `(LOWER(b.name) LIKE $${params.length + 1} OR LOWER(b.country) LIKE $${params.length + 1} OR LOWER(b.headquarters) LIKE $${params.length + 1} OR LOWER(b.description) LIKE $${params.length + 1})`
+      );
+      params.push(`%${(search as string).toLowerCase().trim()}%`);
+    }
+
+    if (country && country !== 'all') {
+      conditions.push(`LOWER(b.country) = LOWER($${params.length + 1})`);
+      params.push(country);
+    }
+
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    sql += ` GROUP BY b.id, b.name, b.logo_url, b.country, b.founded_year, b.headquarters, b.description, b.total_models`;
+
+    const safeSortCols: Record<string, string> = {
+      name: 'b.name',
+      founded_year: 'b.founded_year',
+      total_models: 'b.total_models',
+      active_cars_count: 'active_cars_count',
+      avg_inventory_price: 'avg_inventory_price',
+    };
+    const sortCol = safeSortCols[sort_by as string] || 'b.name';
+    const sortDir = (sort_order as string).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    sql += ` ORDER BY ${sortCol} ${sortDir}`;
+
+    const brandsRes = await queryWithRetry(sql, params);
+    res.json(brandsRes.rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/brands/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const brandRes = await queryWithRetry(`SELECT * FROM neon_brands WHERE id = $1`, [id]);
+    if (brandRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Brand not found' });
+    }
+    const brand = brandRes.rows[0];
+    const carsRes = await queryWithRetry(
+      `SELECT * FROM neon_cars WHERE LOWER(brand) = LOWER($1) ORDER BY price_usd DESC`,
+      [brand.name]
+    );
+    res.json({
+      brand,
+      cars: carsRes.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/brands', async (req: Request, res: Response) => {
+  try {
+    const data = req.body;
+    const id =
+      data.id ||
+      (data.name || 'brand')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    const insertRes = await queryWithRetry(
+      `INSERT INTO neon_brands (
+        id, name, logo_url, country, founded_year, headquarters, description, total_models
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [
+        id,
+        data.name || 'New Brand',
+        data.logo_url || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80',
+        data.country || 'Global',
+        parseInt(data.founded_year, 10) || 2026,
+        data.headquarters || 'Global Headquarters',
+        data.description || 'Pioneering automotive craftsmanship and luxury engineering.',
+        parseInt(data.total_models, 10) || 1,
+      ]
+    );
+    cachedOverview = null;
+    cachedMetaFilters = null;
+    res.status(201).json(insertRes.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/brands/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+
+    const oldRes = await queryWithRetry(`SELECT name FROM neon_brands WHERE id = $1`, [id]);
+    const oldName = oldRes.rows[0]?.name;
+
+    const updateRes = await queryWithRetry(
+      `UPDATE neon_brands SET
+        name = COALESCE($1, name),
+        logo_url = COALESCE($2, logo_url),
+        country = COALESCE($3, country),
+        founded_year = COALESCE($4, founded_year),
+        headquarters = COALESCE($5, headquarters),
+        description = COALESCE($6, description),
+        total_models = COALESCE($7, total_models)
+      WHERE id = $8
+      RETURNING *`,
+      [
+        data.name,
+        data.logo_url,
+        data.country,
+        data.founded_year ? parseInt(data.founded_year, 10) : null,
+        data.headquarters,
+        data.description,
+        data.total_models !== undefined ? parseInt(data.total_models, 10) : null,
+        id,
+      ]
+    );
+
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Brand not found' });
+    }
+
+    if (data.rename_cars_too && oldName && data.name && oldName !== data.name) {
+      await queryWithRetry(`UPDATE neon_cars SET brand = $1 WHERE LOWER(brand) = LOWER($2)`, [
+        data.name,
+        oldName,
+      ]);
+    }
+
+    cachedOverview = null;
+    cachedMetaFilters = null;
+    res.json(updateRes.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/brands/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const delRes = await queryWithRetry(`DELETE FROM neon_brands WHERE id = $1 RETURNING id`, [id]);
+    if (delRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Brand not found' });
+    }
+    cachedOverview = null;
+    cachedMetaFilters = null;
+    res.json({ success: true, id });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/brands/:id/duplicate', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const origRes = await queryWithRetry(`SELECT * FROM neon_brands WHERE id = $1`, [id]);
+    if (origRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Brand not found' });
+    }
+    const orig = origRes.rows[0];
+    const newId = `${orig.id}-copy-${Math.random().toString(36).substring(2, 6)}`;
+    const newName = `${orig.name} (Copy)`;
+
+    const insertRes = await queryWithRetry(
+      `INSERT INTO neon_brands (
+        id, name, logo_url, country, founded_year, headquarters, description, total_models
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [
+        newId,
+        newName,
+        orig.logo_url,
+        orig.country,
+        orig.founded_year,
+        orig.headquarters,
+        orig.description,
+        orig.total_models,
+      ]
+    );
+    cachedOverview = null;
+    cachedMetaFilters = null;
+    res.status(201).json(insertRes.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 13. Schema Explorer
 app.get('/api/schema', async (_req: Request, res: Response) => {
   try {

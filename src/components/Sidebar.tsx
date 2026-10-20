@@ -10,11 +10,13 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Megaphone,
+  Tags,
 } from 'lucide-react';
 
 export type TabType =
   | 'overview'
   | 'fleet'
+  | 'brands'
   | 'users'
   | 'reviews'
   | 'ads'
@@ -26,6 +28,7 @@ interface SidebarProps {
   currentTab: TabType;
   setCurrentTab: (tab: TabType) => void;
   carsCount?: number;
+  brandsCount?: number;
   usersCount?: number;
   reviewsCount?: number;
   adsCount?: number;
@@ -37,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
   carsCount = 27,
+  brandsCount = 23,
   usersCount = 1,
   reviewsCount = 4,
   adsCount = 4,
@@ -55,6 +59,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Vehicle Fleet',
       icon: CarFront,
       badge: carsCount,
+    },
+    {
+      id: 'brands' as TabType,
+      label: 'Automotive Brands',
+      icon: Tags,
+      badge: brandsCount,
     },
     {
       id: 'users' as TabType,

@@ -10,6 +10,7 @@ import { AdsView } from './components/views/AdsView';
 import { EngagementView } from './components/views/EngagementView';
 import { SqlStudioView } from './components/views/SqlStudioView';
 import { DiagnosticsView } from './components/views/DiagnosticsView';
+import { Footer } from './components/Footer';
 import { OverviewData, HealthStatus } from './types';
 import { VehicleFormModal } from './components/modals/VehicleFormModal';
 
@@ -150,6 +151,14 @@ export default function App() {
 
           {currentTab === 'diagnostics' && <DiagnosticsView />}
         </main>
+
+        {/* Executive Animated Footer for Muhammad Adil Zaman */}
+        <Footer
+          onNavigate={(tab) => setCurrentTab(tab)}
+          isDbConnected={healthStatus?.status === 'connected'}
+          carsCount={overviewData?.cars?.total_cars}
+          brandsCount={brandsCount}
+        />
       </div>
 
       {/* Global Add Vehicle Modal */}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { RefreshCw, Plus, ExternalLink } from 'lucide-react';
 import { TabType } from './Sidebar';
+import { ADMIN_PROFILE } from '../utils';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 interface NavbarProps {
   currentTab: TabType;
@@ -62,7 +64,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Zone 3: Actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2.5 shrink-0">
+        <ThemeSwitcher variant="compact" />
+
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
@@ -112,6 +116,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Add Vehicle</span>
           </button>
         )}
+
+        {/* Executive Profile Avatar Pill */}
+        <div className="flex items-center gap-2 pl-3 ml-1 border-l border-neutral-800 shrink-0">
+          <div className="relative group cursor-pointer">
+            <img
+              src={ADMIN_PROFILE.avatarUrl}
+              alt={ADMIN_PROFILE.name}
+              className="w-8 h-8 rounded-full object-cover object-[50%_10%] border-2 border-amber-400/40 group-hover:border-amber-400 transition-colors shadow-sm"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = ADMIN_PROFILE.remoteAvatarUrl;
+              }}
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-neutral-950" />
+          </div>
+          <div className="hidden xl:flex flex-col text-left">
+            <span className="text-xs font-semibold text-neutral-200 leading-tight">
+              {ADMIN_PROFILE.name}
+            </span>
+            <span className="text-[10px] text-amber-400 font-mono tracking-wider">
+              {ADMIN_PROFILE.badge}
+            </span>
+          </div>
+        </div>
       </div>
     </header>
   );

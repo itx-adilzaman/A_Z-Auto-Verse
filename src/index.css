@@ -5,7 +5,167 @@
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Custom dark scrollbar */
+/* ------------------------------------------------------------------ */
+/* Smooth Theme Transition Base                                       */
+/* ------------------------------------------------------------------ */
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ------------------------------------------------------------------ */
+/* High-Contrast Light Theme Overrides ('Solar Mode')                 */
+/* ------------------------------------------------------------------ */
+html.light {
+  color-scheme: light;
+}
+
+html.light body,
+html.light #root,
+html.light .bg-neutral-950 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-neutral-900 {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-neutral-900\/40,
+html.light .bg-neutral-900\/50,
+html.light .bg-neutral-900\/60,
+html.light .bg-neutral-900\/70,
+html.light .bg-neutral-900\/80,
+html.light .bg-neutral-900\/90 {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-neutral-950\/40,
+html.light .bg-neutral-950\/50,
+html.light .bg-neutral-950\/60,
+html.light .bg-neutral-950\/70,
+html.light .bg-neutral-950\/80,
+html.light .bg-neutral-950\/90,
+html.light .bg-neutral-950\/95 {
+  background-color: #f1f5f9 !important;
+}
+
+html.light .bg-neutral-800,
+html.light .bg-neutral-800\/80,
+html.light .bg-neutral-800\/50 {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .hover\:bg-neutral-800:hover,
+html.light .hover\:bg-neutral-700:hover,
+html.light .bg-neutral-800:hover {
+  background-color: #cbd5e1 !important;
+}
+
+html.light .hover\:bg-neutral-900:hover,
+html.light .hover\:bg-neutral-900\/50:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders in High-Contrast Light */
+html.light .border-neutral-800,
+html.light .border-neutral-800\/60,
+html.light .border-neutral-800\/70,
+html.light .border-neutral-800\/80,
+html.light .border-neutral-800\/90,
+html.light .border-neutral-900 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .border-neutral-700,
+html.light .border-neutral-700\/50,
+html.light .border-neutral-700\/60,
+html.light .border-neutral-700\/80 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .divide-neutral-800,
+html.light .divide-neutral-800\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Typography in High-Contrast Light */
+html.light .text-white,
+html.light .text-neutral-100 {
+  color: #0f172a !important;
+}
+
+html.light .text-neutral-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-neutral-300 {
+  color: #334155 !important;
+}
+
+html.light .text-neutral-400 {
+  color: #475569 !important;
+}
+
+html.light .text-neutral-500 {
+  color: #64748b !important;
+}
+
+html.light .text-neutral-600 {
+  color: #94a3b8 !important;
+}
+
+/* High-Contrast Accessible Amber/Accent in Light Mode */
+html.light .text-amber-400 {
+  color: #b45309 !important; /* Amber-700 for high contrast WCAG 4.5:1 */
+}
+
+html.light .text-amber-300 {
+  color: #92400e !important;
+}
+
+html.light .bg-amber-400\/10 {
+  background-color: rgba(217, 119, 6, 0.12) !important;
+}
+
+html.light .border-amber-400\/20,
+html.light .border-amber-400\/30,
+html.light .border-amber-400\/40 {
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+
+/* Form Controls in Light Mode */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Table Enhancements in Light Mode */
+html.light thead {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Card & Modal Shadows in Light Mode */
+html.light .rounded-xl,
+html.light .rounded-2xl,
+html.light .rounded-3xl {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+}
+
+/* Custom Scrollbar (Obsidian vs Light) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -15,11 +175,23 @@
   background: #0a0a0a;
 }
 
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #262626;
   border-radius: 3px;
 }
 
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #404040;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

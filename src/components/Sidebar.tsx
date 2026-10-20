@@ -12,6 +12,8 @@ import {
   Megaphone,
   Tags,
 } from 'lucide-react';
+import { ADMIN_PROFILE } from '../utils';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 export type TabType =
   | 'overview'
@@ -190,21 +192,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
+      {/* Environment Theme Switcher */}
+      <div className="px-3 pb-2">
+        <ThemeSwitcher variant="detailed" />
+      </div>
+
       {/* User Session Footer */}
-      <div className="p-3 border-t border-neutral-800/80 flex items-center justify-between">
+      <div className="p-3 border-t border-neutral-800/80 flex items-center justify-between bg-neutral-950/40">
         <div className="flex items-center gap-2.5 min-w-0">
-          <img
-            src="/src/assets/images/admin_avatar_executive_1792428328453.jpg"
-            alt="Admin"
-            className="w-7 h-7 rounded-full object-cover border border-neutral-700 shrink-0"
-            referrerPolicy="no-referrer"
-          />
+          <div className="relative shrink-0">
+            <img
+              src={ADMIN_PROFILE.avatarUrl}
+              alt={ADMIN_PROFILE.name}
+              className="w-8 h-8 rounded-full object-cover object-[50%_10%] border-2 border-amber-400/30 shadow-sm"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = ADMIN_PROFILE.remoteAvatarUrl;
+              }}
+            />
+            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-neutral-950 ring-1 ring-emerald-400/50" />
+          </div>
           <div className="min-w-0">
-            <div className="text-xs font-medium text-neutral-200 truncate flex items-center gap-1">
-              Adil Zaman
-              <ShieldCheck className="w-3 h-3 text-amber-500 shrink-0" />
+            <div className="text-xs font-semibold text-neutral-100 truncate flex items-center gap-1">
+              <span>{ADMIN_PROFILE.name}</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             </div>
-            <div className="text-[10px] text-neutral-300 truncate">Super Administrator</div>
+            <div className="text-[10px] text-amber-400/80 font-mono truncate">{ADMIN_PROFILE.role}</div>
           </div>
         </div>
       </div>

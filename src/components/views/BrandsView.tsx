@@ -31,6 +31,7 @@ import { Brand } from '../../types';
 import { formatCurrency } from '../../utils';
 import { BrandFormModal } from '../modals/BrandFormModal';
 import { BrandFleetInspectorModal } from '../modals/BrandFleetInspectorModal';
+import { BrandLogo } from '../BrandLogo';
 
 interface BrandsViewProps {
   onNavigateToFleet: (brandName: string) => void;
@@ -510,22 +511,11 @@ export const BrandsView: React.FC<BrandsViewProps> = ({
                 {/* Brand Card Top Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-inner">
-                      {brand.logo_url ? (
-                        <img
-                          src={brand.logo_url}
-                          alt={brand.name}
-                          className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span className="font-bold text-amber-400 text-base font-mono">
-                          {brand.name.slice(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <BrandLogo
+                      src={brand.logo_url}
+                      name={brand.name}
+                      className="w-14 h-14 rounded-xl"
+                    />
                     <div>
                       <h3 className="font-bold text-base text-white tracking-tight group-hover:text-amber-400 transition-colors">
                         {brand.name}
@@ -660,22 +650,11 @@ export const BrandsView: React.FC<BrandsViewProps> = ({
                     {/* Brand Name & Logo */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-neutral-950 border border-neutral-800 overflow-hidden shrink-0 flex items-center justify-center p-1">
-                          {brand.logo_url ? (
-                            <img
-                              src={brand.logo_url}
-                              alt={brand.name}
-                              className="w-full h-full object-cover rounded"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <span className="font-bold text-amber-400 text-xs font-mono">
-                              {brand.name.slice(0, 2).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
+                        <BrandLogo
+                          src={brand.logo_url}
+                          name={brand.name}
+                          className="w-9 h-9 rounded-lg"
+                        />
                         <div>
                           <div className="font-semibold text-neutral-100 group-hover:text-amber-400 transition-colors">
                             {brand.name}

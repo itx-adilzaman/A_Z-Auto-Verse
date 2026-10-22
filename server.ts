@@ -1243,6 +1243,25 @@ app.get('/api/brands/:id', async (req: Request, res: Response) => {
   }
 });
 
+function cleanLogoUrl(raw: any): string {
+  if (!raw || typeof raw !== 'string') return '';
+  let clean = raw.trim();
+  if (!clean) return '';
+  if (clean.startsWith('data:image/')) return clean;
+  if (clean.includes('google.') && (clean.includes('imgurl=') || clean.includes('url='))) {
+    try {
+      const urlObj = new URL(clean);
+      const extracted = urlObj.searchParams.get('imgurl') || urlObj.searchParams.get('url');
+      if (extracted) clean = decodeURIComponent(extracted);
+    } catch {}
+  }
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  else if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('/')) {
+    clean = 'https://' + clean;
+  }
+  return clean;
+}
+
 app.post('/api/brands', async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -1253,6 +1272,8 @@ app.post('/api/brands', async (req: Request, res: Response) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 
+    const sanitizedLogo = cleanLogoUrl(data.logo_url) || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80';
+
     const insertRes = await queryWithRetry(
       `INSERT INTO neon_brands (
         id, name, logo_url, country, founded_year, headquarters, description, total_models
@@ -1261,7 +1282,7 @@ app.post('/api/brands', async (req: Request, res: Response) => {
       [
         id,
         data.name || 'New Brand',
-        data.logo_url || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80',
+        sanitizedLogo,
         data.country || 'Global',
         parseInt(data.founded_year, 10) || 2026,
         data.headquarters || 'Global Headquarters',
@@ -1285,6 +1306,8 @@ app.put('/api/brands/:id', async (req: Request, res: Response) => {
     const oldRes = await queryWithRetry(`SELECT name FROM neon_brands WHERE id = $1`, [id]);
     const oldName = oldRes.rows[0]?.name;
 
+    const sanitizedLogo = data.logo_url !== undefined ? cleanLogoUrl(data.logo_url) : undefined;
+
     const updateRes = await queryWithRetry(
       `UPDATE neon_brands SET
         name = COALESCE($1, name),
@@ -1298,7 +1321,7 @@ app.put('/api/brands/:id', async (req: Request, res: Response) => {
       RETURNING *`,
       [
         data.name,
-        data.logo_url,
+        sanitizedLogo,
         data.country,
         data.founded_year ? parseInt(data.founded_year, 10) : null,
         data.headquarters,

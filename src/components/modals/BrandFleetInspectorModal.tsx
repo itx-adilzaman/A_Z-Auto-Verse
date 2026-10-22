@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Brand, Car } from '../../types';
 import { formatCurrency, safeJsonParse, FALLBACK_CAR_IMAGE } from '../../utils';
+import { BrandLogo } from '../BrandLogo';
 
 interface BrandFleetInspectorModalProps {
   isOpen: boolean;
@@ -68,22 +69,11 @@ export const BrandFleetInspectorModal: React.FC<BrandFleetInspectorModalProps> =
         <div className="relative p-6 border-b border-neutral-800 bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-neutral-950 border border-neutral-700/80 overflow-hidden shrink-0 flex items-center justify-center p-1.5 shadow-lg">
-                {brand.logo_url ? (
-                  <img
-                    src={brand.logo_url}
-                    alt={brand.name}
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <span className="font-bold text-amber-400 text-xl font-mono">
-                    {brand.name.slice(0, 2).toUpperCase()}
-                  </span>
-                )}
-              </div>
+              <BrandLogo
+                src={brand.logo_url}
+                name={brand.name}
+                className="w-16 h-16 rounded-xl shadow-lg"
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-bold text-white tracking-tight">{brand.name}</h2>

@@ -53,3 +53,40 @@ export const ADMIN_PROFILE = {
   email: 'ahmedzamanadilking@gmail.com',
   location: 'Global Operations',
 };
+
+export function normalizeImageUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  let clean = String(url).trim();
+  if (!clean) return '';
+
+  if (clean.startsWith('data:image/')) return clean;
+
+  if (clean.includes('google.') && (clean.includes('imgurl=') || clean.includes('url='))) {
+    try {
+      const urlObj = new URL(clean);
+      const extracted = urlObj.searchParams.get('imgurl') || urlObj.searchParams.get('url');
+      if (extracted) {
+        clean = decodeURIComponent(extracted);
+      }
+    } catch {}
+  }
+
+  if (clean.startsWith('//')) {
+    clean = 'https:' + clean;
+  } else if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('/')) {
+    clean = 'https://' + clean;
+  }
+
+  return clean;
+}
+
+export function getBrandInitials(name: string | undefined | null): string {
+  if (!name) return 'AV';
+  const clean = name.trim();
+  const words = clean.split(/[\s-]+/).filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+

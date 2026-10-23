@@ -387,6 +387,24 @@ app.get('/api/cars', async (req: Request, res: Response) => {
   }
 });
 
+// Dedicated metadata filters endpoint
+app.get('/api/cars/meta/filters', async (_req: Request, res: Response) => {
+  try {
+    const [brandsMeta, bodyTypesMeta, fuelTypesMeta] = await Promise.all([
+      queryWithRetry(`SELECT DISTINCT brand FROM neon_cars WHERE brand IS NOT NULL ORDER BY brand`),
+      queryWithRetry(`SELECT DISTINCT body_type FROM neon_cars WHERE body_type IS NOT NULL ORDER BY body_type`),
+      queryWithRetry(`SELECT DISTINCT fuel_type FROM neon_cars WHERE fuel_type IS NOT NULL ORDER BY fuel_type`),
+    ]);
+    res.json({
+      brands: brandsMeta.rows.map((r: any) => r.brand),
+      bodyTypes: bodyTypesMeta.rows.map((r: any) => r.body_type),
+      fuelTypes: fuelTypesMeta.rows.map((r: any) => r.fuel_type),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Single Car Details with Reviews
 app.get('/api/cars/:id', async (req: Request, res: Response) => {
   try {

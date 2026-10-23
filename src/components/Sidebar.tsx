@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Megaphone,
   Tags,
+  Swords,
 } from 'lucide-react';
 import { ADMIN_PROFILE } from '../utils';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -19,6 +20,7 @@ export type TabType =
   | 'overview'
   | 'fleet'
   | 'brands'
+  | 'compare'
   | 'users'
   | 'reviews'
   | 'ads'

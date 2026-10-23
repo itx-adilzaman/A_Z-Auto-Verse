@@ -519,6 +519,215 @@ app.post('/api/cars', async (req: Request, res: Response) => {
   }
 });
 
+// 5b. Batch Import Cars (CSV & JSON Support)
+app.post('/api/cars/batch-import', async (req: Request, res: Response) => {
+  try {
+    const { cars, duplicateAction = 'skip' } = req.body;
+    if (!Array.isArray(cars) || cars.length === 0) {
+      return res.status(400).json({ error: 'Expected a non-empty array of cars' });
+    }
+
+    let importedCount = 0;
+    let updatedCount = 0;
+    let skippedCount = 0;
+    const errors: { index: number; car: string; error: string }[] = [];
+    const brandsSet = new Set<string>();
+
+    for (let i = 0; i < cars.length; i++) {
+      const raw = cars[i];
+      if (!raw || typeof raw !== 'object') continue;
+
+      const brand = (raw.brand || raw.make || raw.manufacturer || '').trim();
+      const model = (raw.model || raw.model_name || raw.name || '').trim();
+
+      if (!brand || !model) {
+        errors.push({ index: i + 1, car: `${brand} ${model}`.trim() || `Row #${i + 1}`, error: 'Missing Brand or Model name' });
+        continue;
+      }
+
+      brandsSet.add(brand);
+
+      // Deterministic or clean ID
+      let id = (raw.id || '').trim();
+      if (!id || duplicateAction === 'create_new') {
+        const baseSlug = `${brand}-${model}`
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        id = duplicateAction === 'create_new'
+          ? `${baseSlug}-${Math.random().toString(36).substring(2, 7)}`
+          : baseSlug;
+      }
+
+      const variant = (raw.variant || '').trim();
+      const year = parseInt(raw.year || raw.model_year, 10) || 2024;
+      const body_type = (raw.body_type || raw.body_style || raw.type || 'Coupe').trim();
+      const price_usd = parseFloat(String(raw.price_usd || raw.price || '0').replace(/[^0-9.]/g, '')) || 0;
+      const fuel_type = (raw.fuel_type || raw.fuel || 'Petrol').trim();
+      const engine = (raw.engine || raw.powertrain || 'V8 Twin-Turbo').trim();
+      const horsepower = parseInt(raw.horsepower || raw.hp || '0', 10) || 500;
+      const torque_nm = parseInt(raw.torque_nm || raw.torque || '0', 10) || 600;
+      const transmission = (raw.transmission || 'Automatic').trim();
+      const drivetrain = (raw.drivetrain || 'RWD').trim();
+      const top_speed_kmh = parseInt(raw.top_speed_kmh || raw.top_speed || '300', 10) || 300;
+      const acceleration_0_100 = parseFloat(String(raw.acceleration_0_100 || raw.acceleration || '3.5').replace(/[^0-9.]/g, '')) || 3.5;
+      const mileage = (raw.mileage || '10 L/100km').trim();
+      const dimensions = (raw.dimensions || '4600 x 1950 x 1200 mm').trim();
+      const wheelbase = (raw.wheelbase || '2650 mm').trim();
+      const weight_kg = parseInt(raw.weight_kg || raw.weight || '1500', 10) || 1500;
+      const ground_clearance = (raw.ground_clearance || '110 mm').trim();
+      const boot_space = (raw.boot_space || '150 L').trim();
+      const seating = parseInt(raw.seating || raw.seating_capacity || '2', 10) || 2;
+      const tyre_size = (raw.tyre_size || '255/35 R20').trim();
+      const brakes = (raw.brakes || 'Carbon Ceramic').trim();
+      const suspension = (raw.suspension || 'Adaptive Damping').trim();
+      const safety_rating = parseFloat(raw.safety_rating || '5.0') || 5.0;
+      const description = (raw.description || raw.details || `${brand} ${model} high performance automotive engineering.`).trim();
+      const country = (raw.country || raw.origin || 'Global').trim();
+      const rating = parseFloat(raw.rating || '4.9') || 4.9;
+      const reviews_count = parseInt(raw.reviews_count || '0', 10) || 0;
+
+      // Booleans
+      const is_featured = raw.is_featured === true || String(raw.is_featured).toLowerCase() === 'true';
+      const is_trending = raw.is_trending === true || String(raw.is_trending).toLowerCase() === 'true';
+      const is_electric = raw.is_electric === true || String(raw.is_electric).toLowerCase() === 'true' || fuel_type.toLowerCase().includes('electric');
+      const is_supercar = raw.is_supercar === true || String(raw.is_supercar).toLowerCase() === 'true' || horsepower >= 600 || price_usd >= 300000;
+      const is_sports = raw.is_sports === true || String(raw.is_sports).toLowerCase() === 'true' || body_type.toLowerCase().includes('coupe') || body_type.toLowerCase().includes('sports') || body_type.toLowerCase().includes('hypercar');
+      const is_suv = raw.is_suv === true || String(raw.is_suv).toLowerCase() === 'true' || body_type.toLowerCase().includes('suv');
+      const is_budget_friendly = raw.is_budget_friendly === true || String(raw.is_budget_friendly).toLowerCase() === 'true' || price_usd < 100000;
+
+      // Handle features: array or string
+      let featuresStr = '';
+      if (Array.isArray(raw.features)) {
+        featuresStr = raw.features.join(' | ');
+      } else if (typeof raw.features === 'string') {
+        featuresStr = raw.features.trim();
+      }
+      if (!featuresStr) featuresStr = 'Aerodynamic Package | Carbon Fiber Interior | Track Telemetry';
+
+      // Handle images: array or string
+      let imagesJson = '';
+      if (Array.isArray(raw.images) && raw.images.length > 0) {
+        imagesJson = JSON.stringify(raw.images);
+      } else if (typeof raw.images === 'string' && raw.images.trim().startsWith('[')) {
+        imagesJson = raw.images.trim();
+      } else if (typeof raw.images === 'string' && raw.images.trim()) {
+        imagesJson = JSON.stringify([raw.images.trim()]);
+      } else if (raw.image_url || raw.image) {
+        imagesJson = JSON.stringify([String(raw.image_url || raw.image).trim()]);
+      } else {
+        imagesJson = JSON.stringify(['https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80']);
+      }
+
+      // Check existing ID
+      const existing = await queryWithRetry('SELECT id FROM neon_cars WHERE id = $1', [id]);
+      if (existing.rows.length > 0) {
+        if (duplicateAction === 'skip') {
+          skippedCount++;
+          continue;
+        } else if (duplicateAction === 'update') {
+          await queryWithRetry(`
+            UPDATE neon_cars SET
+              brand = $2, model = $3, variant = $4, year = $5, body_type = $6, price_usd = $7,
+              fuel_type = $8, engine = $9, horsepower = $10, torque_nm = $11, transmission = $12,
+              drivetrain = $13, top_speed_kmh = $14, acceleration_0_100 = $15, mileage = $16,
+              dimensions = $17, wheelbase = $18, weight_kg = $19, ground_clearance = $20,
+              boot_space = $21, seating = $22, tyre_size = $23, brakes = $24, suspension = $25,
+              safety_rating = $26, features = $27, images = $28, description = $29, country = $30,
+              rating = $31, reviews_count = $32, is_featured = $33, is_trending = $34,
+              is_electric = $35, is_supercar = $36, is_sports = $37, is_suv = $38, is_budget_friendly = $39
+            WHERE id = $1
+          `, [
+            id, brand, model, variant, year, body_type, price_usd, fuel_type, engine,
+            horsepower, torque_nm, transmission, drivetrain, top_speed_kmh,
+            acceleration_0_100, mileage, dimensions, wheelbase, weight_kg,
+            ground_clearance, boot_space, seating, tyre_size, brakes, suspension,
+            safety_rating, featuresStr, imagesJson, description, country, rating,
+            reviews_count, is_featured, is_trending, is_electric, is_supercar,
+            is_sports, is_suv, is_budget_friendly
+          ]);
+          updatedCount++;
+          continue;
+        } else {
+          // create_new with unique suffix
+          id = `${id}-${Math.random().toString(36).substring(2, 6)}`;
+        }
+      }
+
+      // Insert new car
+      await queryWithRetry(`
+        INSERT INTO neon_cars (
+          id, brand, model, variant, year, body_type, price_usd, fuel_type,
+          engine, horsepower, torque_nm, transmission, drivetrain, top_speed_kmh,
+          acceleration_0_100, mileage, dimensions, wheelbase, weight_kg,
+          ground_clearance, boot_space, seating, tyre_size, brakes, suspension,
+          safety_rating, features, images, description, country, rating,
+          reviews_count, is_featured, is_trending, is_electric, is_supercar,
+          is_sports, is_suv, is_budget_friendly, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8,
+          $9, $10, $11, $12, $13, $14,
+          $15, $16, $17, $18, $19,
+          $20, $21, $22, $23, $24, $25,
+          $26, $27, $28, $29, $30, $31,
+          $32, $33, $34, $35, $36,
+          $37, $38, $39, NOW()
+        )
+      `, [
+        id, brand, model, variant, year, body_type, price_usd, fuel_type,
+        engine, horsepower, torque_nm, transmission, drivetrain, top_speed_kmh,
+        acceleration_0_100, mileage, dimensions, wheelbase, weight_kg,
+        ground_clearance, boot_space, seating, tyre_size, brakes, suspension,
+        safety_rating, featuresStr, imagesJson, description, country, rating,
+        reviews_count, is_featured, is_trending, is_electric, is_supercar,
+        is_sports, is_suv, is_budget_friendly
+      ]);
+      importedCount++;
+    }
+
+    // Auto-register missing brands into neon_brands
+    let brandsCreated = 0;
+    for (const bName of brandsSet) {
+      const bId = bName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const brandCheck = await queryWithRetry('SELECT id FROM neon_brands WHERE LOWER(name) = LOWER($1) OR id = $2', [bName, bId]);
+      if (brandCheck.rows.length === 0) {
+        await queryWithRetry(`
+          INSERT INTO neon_brands (
+            id, name, logo_url, country, founded_year, headquarters, description, total_models
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          bId,
+          bName,
+          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80',
+          'Global',
+          2020,
+          'Global Headquarters',
+          `Automotive craftsmanship and engineering heritage from ${bName}.`,
+          1
+        ]);
+        brandsCreated++;
+      }
+    }
+
+    // Invalidate caches
+    cachedOverview = null;
+    cachedMetaFilters = null;
+
+    res.json({
+      success: true,
+      importedCount,
+      updatedCount,
+      skippedCount,
+      brandsCreated,
+      totalProcessed: cars.length,
+      errors
+    });
+  } catch (err: any) {
+    console.error('Error during batch-import:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 6. Update Car
 app.put('/api/cars/:id', async (req: Request, res: Response) => {
   try {

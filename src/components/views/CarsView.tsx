@@ -19,11 +19,14 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  FileSpreadsheet,
+  UploadCloud,
 } from 'lucide-react';
 import { Car, Review } from '../../types';
 import { formatCurrency, safeJsonParse, FALLBACK_CAR_IMAGE } from '../../utils';
 import { VehicleDossierModal } from '../modals/VehicleDossierModal';
 import { VehicleFormModal } from '../modals/VehicleFormModal';
+import { CarImportModal } from '../modals/CarImportModal';
 
 interface CarsViewProps {
   onAddVehicle: () => void;
@@ -73,6 +76,7 @@ export const CarsView: React.FC<CarsViewProps> = ({ onAddVehicle, initialBrandFi
 
   const [formCar, setFormCar] = useState<Car | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [deleteTargetCar, setDeleteTargetCar] = useState<Car | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -305,6 +309,15 @@ export const CarsView: React.FC<CarsViewProps> = ({ onAddVehicle, initialBrandFi
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white text-xs font-medium border border-neutral-700/80 hover:border-amber-400/50 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+            title="Import vehicles in bulk from CSV or JSON file"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+            <span>Import CSV / JSON</span>
+          </button>
+
           <button
             onClick={handleExportCSV}
             className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-medium border border-neutral-800 rounded-lg transition-colors flex items-center gap-1.5"
@@ -854,6 +867,15 @@ export const CarsView: React.FC<CarsViewProps> = ({ onAddVehicle, initialBrandFi
         onClose={() => setIsFormOpen(false)}
         initialCar={formCar}
         onSave={handleSaveCar}
+      />
+
+      {/* Bulk CSV / JSON Importer Modal */}
+      <CarImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          fetchCars();
+        }}
       />
     </div>
   );

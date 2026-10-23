@@ -46,7 +46,7 @@ export const ADMIN_PROFILE = {
   name: 'Muhammad Adil Zaman',
   title: 'Founder & Chief Architect',
   role: 'Super Administrator',
-  avatarUrl: '/src/assets/images/muhammad_adil_zaman_avatar.jpg',
+  avatarUrl: '/images/muhammad_adil_zaman_avatar.jpg',
   remoteAvatarUrl:
     'https://camo.githubusercontent.com/d8d6d485bfb0a9318e25ba0e75df600a0b923c7eb66c604a631a26c43ceed9af/68747470733a2f2f7265732e636c6f7564696e6172792e636f6d2f646b647a75796a63342f696d6167652f75706c6f61642f76313739323433323531352f313738343634343737343431325f6e736d6c79682e6a7067',
   badge: 'FOUNDER & ARCHITECT',

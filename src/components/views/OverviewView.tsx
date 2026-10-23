@@ -16,6 +16,7 @@ import {
 import { OverviewData } from '../../types';
 import { formatCurrency, formatNumber, safeJsonParse, FALLBACK_CAR_IMAGE } from '../../utils';
 import { TabType } from '../Sidebar';
+import autoverseHeroImg from '../../assets/images/autoverse_admin_hero_1792428311407.jpg';
 
 interface OverviewViewProps {
   data: OverviewData | null;
@@ -56,14 +57,21 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
       {/* Hero Welcome Banner */}
-      <div className="relative rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-950 shadow-2xl group">
         <img
-          src="/src/assets/images/autoverse_admin_hero_1792428311407.jpg"
+          src={autoverseHeroImg}
           alt="AutoVerse Hypercar"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40 mix-blend-luminosity scale-105"
+          className="absolute inset-0 w-full h-full object-cover object-right md:object-center opacity-85 transition-all duration-700 group-hover:scale-105"
           referrerPolicy="no-referrer"
+          onError={(e) => {
+            // Production fallback to public path or remote asset
+            const target = e.target as HTMLImageElement;
+            if (target.src !== window.location.origin + '/images/autoverse_admin_hero_1792428311407.jpg') {
+              target.src = '/images/autoverse_admin_hero_1792428311407.jpg';
+            }
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/95 via-neutral-950/70 to-neutral-950/20 sm:to-transparent pointer-events-none" />
 
         <div className="relative z-10 p-6 sm:p-8 lg:p-10 max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-medium text-amber-400 mb-3 tracking-wider">
